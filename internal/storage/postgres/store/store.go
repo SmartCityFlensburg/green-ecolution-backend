@@ -7,6 +7,7 @@ import (
 	"github.com/green-ecolution/green-ecolution-backend/internal/storage"
 	sqlc "github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/_sqlc"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pkg/errors"
 )
@@ -51,17 +52,26 @@ func (s *Store) HandleError(err error) error {
 func (s *Store) WithTx(ctx context.Context, fn func(tx pgx.Tx) error) error {
 	tx, err := s.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
+		slog.Error("Failed to begin transaction", "error", err)
 		return err
 	}
 
 	err = fn(tx)
 	if err != nil {
-		err = tx.Rollback(ctx)
-		if err != nil {
-			return err
+		rbErr := tx.Rollback(ctx)
+		if rbErr != nil {
+			slog.Error("Failed to rollback transaction", "rollbackError", rbErr, "originalError", err)
+			return rbErr
 		}
+		slog.Error("Transaction function failed", "error", err)
+		return err
 	}
-	return tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		slog.Error("Failed to commit transaction", "error", err)
+		return err
+
+	}
+	return nil
 }
 
 func (s *Store) Close() {
@@ -75,7 +85,7 @@ func (s *Store) CheckSensorExists(ctx context.Context, sensorID *int32) error {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return storage.ErrSensorNotFound
 			} else {
-				slog.Error("Error getting sensor by id", "error", err)
+				slog.Error("Error getting sensor by id", "sensorID", *sensorID, "error", err)
 				return s.HandleError(err)
 			}
 		}
@@ -91,11 +101,31 @@ func (s *Store) CheckImageExists(ctx context.Context, imageID *int32) error {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return storage.ErrImageNotFound
 			} else {
-				slog.Error("Error getting image by id", "error", err)
+				slog.Error("Error getting image by id", "imageID", *imageID, "error", err)
 				return s.HandleError(err)
 			}
 		}
 	}
 
+	return nil
+}
+
+func (s *Store) CheckTreeClusterExists(ctx context.Context, treeClusterID *int32) error {
+	if treeClusterID != nil {
+		_, err := s.GetTreeClusterByID(ctx, *treeClusterID)
+		if err != nil {
+			if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "42P01" {
+				slog.Error("Database table 'tree_clusters' does not exist", "error", err)
+				return errors.New("database table 'tree_clusters' does not exist")
+			}
+			if errors.Is(err, pgx.ErrNoRows) {
+				return storage.ErrTreeClusterNotFound
+			}
+			slog.Error("Error getting tree cluster by id", "treeClusterID", *treeClusterID, "error", err)
+			return s.HandleError(err)
+
+		}
+
+	}
 	return nil
 }
