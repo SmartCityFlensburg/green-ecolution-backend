@@ -2,6 +2,7 @@ package image
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	sqlc "github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/_sqlc"
@@ -10,7 +11,8 @@ import (
 func (r *ImageRepository) Update(ctx context.Context, id int32, iFn ...entities.EntityFunc[entities.Image]) (*entities.Image, error) {
 	entity, err := r.GetByID(ctx, id)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Image Update failed", "Error", err, "Image ID", id)
+		return nil, err
 	}
 
 	for _, fn := range iFn {
