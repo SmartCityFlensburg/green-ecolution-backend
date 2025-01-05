@@ -3,6 +3,7 @@ package region
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	sqlc "github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/_sqlc"
@@ -11,7 +12,8 @@ import (
 func (r *RegionRepository) Update(ctx context.Context, id int32, vFn ...entities.EntityFunc[entities.Region]) (*entities.Region, error) {
 	entity, err := r.GetByID(ctx, id)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error getting region by id", "Error", err, "ID", id)
+		return nil, err
 	}
 
 	for _, fn := range vFn {

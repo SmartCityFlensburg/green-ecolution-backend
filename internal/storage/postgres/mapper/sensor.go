@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"encoding/json"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	sqlc "github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/_sqlc"
@@ -27,6 +28,7 @@ func MapSensorData(src []byte) (*entities.MqttPayload, error) {
 	var payload entities.MqttPayload
 	err := json.Unmarshal(src, &payload)
 	if err != nil {
+		slog.Error("Error unmarshalling sensor data", "Error", err)
 		return nil, err
 	}
 	return &payload, nil

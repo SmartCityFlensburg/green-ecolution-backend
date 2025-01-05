@@ -3,6 +3,7 @@ package sensor
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/storage"
 
@@ -37,7 +38,8 @@ func (r *SensorRepository) Create(ctx context.Context, sFn ...entities.EntityFun
 
 	id, err := r.createEntity(ctx, entity)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("failed to create sensor entity", "Error", err)
+		return nil, err
 	}
 
 	entity.ID = id
@@ -57,7 +59,9 @@ func (r *SensorRepository) InsertSensorData(ctx context.Context, latestData *ent
 	}
 
 	if id == "" {
-		return r.store.HandleError(errors.New("sensor id cannot be empty"))
+		err := errors.New("sensor id cannot be empty")
+		slog.Error("failed to insert sensor data", "Error", err)
+		return err
 	}
 
 	mqttData := r.mapper.FromDomainSensorData(latestData.Data)

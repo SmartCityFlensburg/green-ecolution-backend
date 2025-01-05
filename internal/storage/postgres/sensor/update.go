@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/storage"
 
@@ -20,7 +21,8 @@ func (r *SensorRepository) Update(ctx context.Context, id string, sFn ...entitie
 	}
 
 	if err := r.updateEntity(ctx, entity); err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("failed to update sensor entity", "Error", err)
+		return nil, err
 	}
 
 	if entity.LatestData != nil && entity.LatestData.Data != nil {
@@ -50,6 +52,7 @@ func (r *SensorRepository) updateEntity(ctx context.Context, sensor *entities.Se
 	}
 	err := r.store.SetSensorLocation(ctx, locationParams)
 	if err != nil {
+		slog.Error("failed to update sensor location", "Error", err)
 		return err
 	}
 

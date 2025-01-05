@@ -3,6 +3,7 @@ package region
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	sqlc "github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/_sqlc"
@@ -26,7 +27,8 @@ func (r *RegionRepository) Create(ctx context.Context, vFn ...entities.EntityFun
 
 	id, err := r.createEntity(ctx, entity)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error creating region", "Error", err)
+		return nil, err
 	}
 
 	entity.ID = *id
@@ -40,7 +42,8 @@ func (r *RegionRepository) createEntity(ctx context.Context, entity *entities.Re
 
 	id, err := r.store.CreateRegion(ctx, &args)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error creating region", "Error", err)
+		return nil, err
 	}
 
 	return &id, nil
