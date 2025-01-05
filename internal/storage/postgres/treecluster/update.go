@@ -3,6 +3,7 @@ package treecluster
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	sqlc "github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/_sqlc"
@@ -20,6 +21,7 @@ func (r *TreeClusterRepository) Update(ctx context.Context, id int32, updateFn f
 
 		tc, err := r.GetByID(ctx, id)
 		if err != nil {
+			slog.Error("Error getting tree cluster by ID", "Error", err, "TreeClusterID", id)
 			return err
 		}
 

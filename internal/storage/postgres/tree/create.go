@@ -3,6 +3,7 @@ package tree
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	"github.com/green-ecolution/green-ecolution-backend/internal/storage"
@@ -37,6 +38,7 @@ func (r *TreeRepository) Create(ctx context.Context, tFn ...entities.EntityFunc[
 
 	id, err := r.createEntity(ctx, &entity)
 	if err != nil {
+		slog.Error("Error creating tree entity", "Error", err)
 		return nil, r.store.HandleError(err)
 	}
 	entity.ID = id

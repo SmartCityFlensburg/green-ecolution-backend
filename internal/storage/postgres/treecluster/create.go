@@ -3,6 +3,7 @@ package treecluster
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	sqlc "github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/_sqlc"
@@ -43,6 +44,7 @@ func (r *TreeClusterRepository) Create(ctx context.Context, createFn func(*entit
 		entity := defaultTreeCluster()
 		created, err := createFn(entity)
 		if err != nil {
+			slog.Error("Error creating tree cluster entity", "Error", err)
 			return err
 		}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	"github.com/twpayne/go-geos"
@@ -12,7 +13,8 @@ import (
 func (r *TreeClusterRepository) GetAll(ctx context.Context) ([]*entities.TreeCluster, error) {
 	rows, err := r.store.GetAllTreeClusters(ctx)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error getting all tree clusters", "Error", err)
+		return nil, err
 	}
 
 	data := r.mapper.FromSqlList(rows)
@@ -28,7 +30,8 @@ func (r *TreeClusterRepository) GetAll(ctx context.Context) ([]*entities.TreeClu
 func (r *TreeClusterRepository) GetByID(ctx context.Context, id int32) (*entities.TreeCluster, error) {
 	row, err := r.store.GetTreeClusterByID(ctx, id)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error getting tree cluster by ID", "Error", err, "TreeClusterID", id)
+		return nil, err
 	}
 
 	tc := r.mapper.FromSql(row)
@@ -42,7 +45,8 @@ func (r *TreeClusterRepository) GetByID(ctx context.Context, id int32) (*entitie
 func (r *TreeClusterRepository) GetByIDs(ctx context.Context, ids []int32) ([]*entities.TreeCluster, error) {
 	rows, err := r.store.GetTreesClustersByIDs(ctx, ids)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error getting tree clusters by IDs", "Error", err, "TreeClusterIDs", ids)
+		return nil, err
 	}
 
 	tc := r.mapper.FromSqlList(rows)
@@ -77,7 +81,8 @@ func (r *TreeClusterRepository) GetCenterPoint(ctx context.Context, tcID int32) 
 func (r *TreeClusterRepository) GetAllLatestSensorDataByClusterID(ctx context.Context, tcID int32) ([]*entities.SensorData, error) {
 	rows, err := r.store.GetAllLatestSensorDataByTreeClusterID(ctx, tcID)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error getting all latest sensor data by tree cluster ID", "Error", err, "TreeClusterID", tcID)
+		return nil, err
 	}
 	domainData, err := r.sensorMapper.FromSqlSensorDataList(rows)
 	if err != nil {

@@ -2,6 +2,7 @@ package tree
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	"github.com/green-ecolution/green-ecolution-backend/internal/storage"
@@ -113,7 +114,9 @@ func WithWateringStatus(wateringStatus entities.WateringStatus) entities.EntityF
 func (r *TreeRepository) Delete(ctx context.Context, id int32) error {
 	images, err := r.GetAllImagesByID(ctx, id)
 	if err != nil {
-		return r.store.HandleError(errors.Wrap(err, "failed to get images"))
+		err = errors.Wrap(err, "failed to get images")
+		slog.Error("Error getting all images by tree id", "Error", err, "TreeID", id)
+		return err
 	}
 
 	for _, img := range images {
@@ -141,7 +144,9 @@ func (r *TreeRepository) Delete(ctx context.Context, id int32) error {
 
 func (r *TreeRepository) DeleteAndUnlinkImages(ctx context.Context, id int32) error {
 	if err := r.UnlinkAllImages(ctx, id); err != nil {
-		return r.store.HandleError(errors.Wrap(err, "failed to unlink images"))
+		err = errors.Wrap(err, "failed to unlink images")
+		slog.Error("Error unlinking all images", "Error", err, "TreeID", id)
+		return err
 	}
 
 	return r.Delete(ctx, id)

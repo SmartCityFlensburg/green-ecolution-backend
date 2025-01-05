@@ -2,6 +2,7 @@ package tree
 
 import (
 	"context"
+	"log/slog"
 
 	sqlc "github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/_sqlc"
 
@@ -14,13 +15,15 @@ import (
 func (r *TreeRepository) GetAll(ctx context.Context) ([]*entities.Tree, error) {
 	rows, err := r.store.GetAllTrees(ctx)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error getting all trees", "Error", err)
+		return nil, err
 	}
 
 	t := r.mapper.FromSqlList(rows)
 	for _, tree := range t {
 		if err := r.mapFields(ctx, tree); err != nil {
-			return nil, r.store.HandleError(err)
+			slog.Error("Error mapping fields", "Error", err)
+			return nil, err
 		}
 	}
 
@@ -30,7 +33,8 @@ func (r *TreeRepository) GetAll(ctx context.Context) ([]*entities.Tree, error) {
 func (r *TreeRepository) GetByID(ctx context.Context, id int32) (*entities.Tree, error) {
 	row, err := r.store.GetTreeByID(ctx, id)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error getting tree by id", "Error", err)
+		return nil, err
 	}
 
 	t := r.mapper.FromSql(row)
@@ -47,7 +51,8 @@ func (r *TreeRepository) GetBySensorID(ctx context.Context, id string) (*entitie
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, storage.ErrSensorNotFound
 		} else {
-			return nil, r.store.HandleError(err)
+			slog.Error("Error getting sensor by id", "Error", err, "SensorID", id)
+			return nil, err
 		}
 	}
 
@@ -67,7 +72,8 @@ func (r *TreeRepository) GetBySensorID(ctx context.Context, id string) (*entitie
 func (r *TreeRepository) GetBySensorIDs(ctx context.Context, ids ...string) ([]*entities.Tree, error) {
 	rows, err := r.store.GetTreesBySensorIDs(ctx, ids)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error getting trees by sensor ids", "Error", err, "SensorIDs", ids)
+		return nil, err
 	}
 
 	t := r.mapper.FromSqlList(rows)
@@ -83,7 +89,8 @@ func (r *TreeRepository) GetBySensorIDs(ctx context.Context, ids ...string) ([]*
 func (r *TreeRepository) GetTreesByIDs(ctx context.Context, ids []int32) ([]*entities.Tree, error) {
 	rows, err := r.store.GetTreesByIDs(ctx, ids)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error getting trees by ids", "Error", err, "TreeIDs", ids)
+		return nil, err
 	}
 
 	t := r.mapper.FromSqlList(rows)
@@ -99,7 +106,8 @@ func (r *TreeRepository) GetTreesByIDs(ctx context.Context, ids []int32) ([]*ent
 func (r *TreeRepository) GetByTreeClusterID(ctx context.Context, id int32) ([]*entities.Tree, error) {
 	_, err := r.store.GetTreeClusterByID(ctx, id)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error getting tree cluster by id", "Error", err, "TreeClusterID", id)
+		return nil, err
 	}
 
 	rows, err := r.store.GetTreesByTreeClusterID(ctx, &id)
@@ -124,7 +132,8 @@ func (r *TreeRepository) GetByCoordinates(ctx context.Context, latitude, longitu
 	}
 	row, err := r.store.GetTreeByCoordinates(ctx, &params)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error getting tree by coordinates", "Error", err, "Latitude", latitude, "Longitude", longitude)
+		return nil, err
 	}
 	tree := r.mapper.FromSql(row)
 	if err := r.mapFields(ctx, tree); err != nil {
@@ -136,7 +145,8 @@ func (r *TreeRepository) GetByCoordinates(ctx context.Context, latitude, longitu
 func (r *TreeRepository) GetAllImagesByID(ctx context.Context, id int32) ([]*entities.Image, error) {
 	rows, err := r.store.GetAllImagesByTreeID(ctx, id)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error getting all images by tree id", "Error", err, "TreeID", id)
+		return nil, err
 	}
 
 	return r.iMapper.FromSqlList(rows), nil
@@ -148,7 +158,8 @@ func (r *TreeRepository) GetSensorByTreeID(ctx context.Context, treeID int32) (*
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, storage.ErrSensorNotFound
 		} else {
-			return nil, r.store.HandleError(err)
+			slog.Error("Error getting sensor by tree id", "Error", err, "TreeID", treeID)
+			return nil, err
 		}
 	}
 
@@ -166,7 +177,8 @@ func (r *TreeRepository) getTreeClusterByTreeID(ctx context.Context, treeID int3
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, storage.ErrTreeClusterNotFound
 		} else {
-			return nil, r.store.HandleError(err)
+			slog.Error("Error getting tree cluster by tree id", "Error", err, "TreeID", treeID)
+			return nil, err
 		}
 	}
 
@@ -176,7 +188,8 @@ func (r *TreeRepository) getTreeClusterByTreeID(ctx context.Context, treeID int3
 // Map sensor, images and tree cluster entity to domain flowerbed
 func (r *TreeRepository) mapFields(ctx context.Context, t *entities.Tree) error {
 	if err := mapImages(ctx, r, t); err != nil {
-		return r.store.HandleError(err)
+		slog.Error("Error mapping images", "Error", err)
+		return err
 	}
 
 	if err := mapSensor(ctx, r, t); err != nil {
@@ -191,7 +204,8 @@ func (r *TreeRepository) mapFields(ctx context.Context, t *entities.Tree) error 
 func mapImages(ctx context.Context, r *TreeRepository, t *entities.Tree) error {
 	images, err := r.GetAllImagesByID(ctx, t.ID)
 	if err != nil {
-		return r.store.HandleError(err)
+		slog.Error("Error getting all images by tree id", "Error", err, "TreeID", t.ID)
+		return err
 	}
 	t.Images = images
 	return nil
@@ -205,7 +219,8 @@ func mapSensor(ctx context.Context, r *TreeRepository, t *entities.Tree) error {
 			t.Sensor = nil
 			return nil
 		}
-		return r.store.HandleError(err)
+		slog.Error("Error getting sensor by tree id", "Error", err, "TreeID", t.ID)
+		return err
 	}
 	t.Sensor = sensor
 	return nil
@@ -214,7 +229,8 @@ func mapSensor(ctx context.Context, r *TreeRepository, t *entities.Tree) error {
 func mapTreeCluster(ctx context.Context, r *TreeRepository, t *entities.Tree) error {
 	treeCluster, err := r.getTreeClusterByTreeID(ctx, t.ID)
 	if err != nil {
-		return r.store.HandleError(err)
+		slog.Error("Error getting tree cluster by tree id", "Error", err, "TreeID", t.ID)
+		return err
 	}
 	t.TreeCluster = treeCluster
 	return nil
@@ -233,7 +249,8 @@ func (r *TreeRepository) FindNearestTree(ctx context.Context, latitude, longitud
 
 	tree := r.mapper.FromSql(nearestTree)
 	if err := r.mapFields(ctx, tree); err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error mapping fields", "Error", err)
+		return nil, err
 	}
 	return tree, nil
 }
