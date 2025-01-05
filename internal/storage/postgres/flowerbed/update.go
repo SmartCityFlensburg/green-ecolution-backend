@@ -2,6 +2,7 @@ package flowerbed
 
 import (
 	"context"
+	"log/slog"
 	"reflect"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
@@ -12,7 +13,8 @@ import (
 func (r *FlowerbedRepository) Update(ctx context.Context, id int32, fFn ...entities.EntityFunc[entities.Flowerbed]) (*entities.Flowerbed, error) {
 	prev, err := r.GetByID(ctx, id)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Flowerbed Update failed", "Error", err, "Flowerbed ID", id)
+		return nil, err
 	}
 
 	original := *prev
@@ -36,6 +38,7 @@ func (r *FlowerbedRepository) Update(ctx context.Context, id int32, fFn ...entit
 func (r *FlowerbedRepository) UpdateWithImages(ctx context.Context, id int32, fFn ...entities.EntityFunc[entities.Flowerbed]) (*entities.Flowerbed, error) {
 	f, err := r.Update(ctx, id, fFn...)
 	if err != nil {
+		slog.Warn("Update flowerbed Images failed")
 		return nil, err
 	}
 
@@ -71,6 +74,7 @@ func (r *FlowerbedRepository) updateEntity(ctx context.Context, f *entities.Flow
 func (r *FlowerbedRepository) updateImages(ctx context.Context, f *entities.Flowerbed) error {
 	images, err := r.GetAllImagesByID(ctx, f.ID)
 	if err != nil {
+		slog.Error("Error getting all images by flowerbed ID", "Error", err, "Flowerbed ID", f.ID)
 		return err
 	}
 

@@ -2,6 +2,7 @@ package flowerbed
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	"github.com/green-ecolution/green-ecolution-backend/internal/storage"
@@ -12,7 +13,8 @@ import (
 func (r *FlowerbedRepository) GetAll(ctx context.Context) ([]*entities.Flowerbed, error) {
 	row, err := r.store.GetAllFlowerbeds(ctx)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error getting all flowerbeds", "Error", err)
+		return nil, err
 	}
 
 	data := r.mapper.FromSqlList(row)
@@ -39,7 +41,8 @@ func (r *FlowerbedRepository) GetAll(ctx context.Context) ([]*entities.Flowerbed
 func (r *FlowerbedRepository) GetByID(ctx context.Context, id int32) (*entities.Flowerbed, error) {
 	row, err := r.store.GetFlowerbedByID(ctx, id)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error getting flowerbed by ID", "Error", err, "Flowerbed ID", id)
+		return nil, err
 	}
 
 	data := r.mapper.FromSql(row)
@@ -64,6 +67,7 @@ func (r *FlowerbedRepository) GetByID(ctx context.Context, id int32) (*entities.
 
 func (r *FlowerbedRepository) GetAllImagesByID(ctx context.Context, flowerbedID int32) ([]*entities.Image, error) {
 	if err := r.flowerbedIDExists(ctx, flowerbedID); err != nil {
+		slog.Error("Error getting all images by flowerbed ID", "Error", err, "Flowerbed ID", flowerbedID)
 		return nil, err
 	}
 
@@ -77,6 +81,7 @@ func (r *FlowerbedRepository) GetAllImagesByID(ctx context.Context, flowerbedID 
 
 func (r *FlowerbedRepository) GetSensorByFlowerbedID(ctx context.Context, flowerbedID int32) (*entities.Sensor, error) {
 	if err := r.flowerbedIDExists(ctx, flowerbedID); err != nil {
+		slog.Error("Error getting sensor by flowerbed ID", "Error", err, "Flowerbed ID", flowerbedID)
 		return nil, err
 	}
 
@@ -93,7 +98,7 @@ func (r *FlowerbedRepository) GetSensorByFlowerbedID(ctx context.Context, flower
 
 func (r *FlowerbedRepository) GetRegionByFlowerbedID(ctx context.Context, flowerbedID int32) (*entities.Region, error) {
 	if err := r.flowerbedIDExists(ctx, flowerbedID); err != nil {
-		return nil, err
+		return nil, r.store.HandleError(err)
 	}
 
 	row, err := r.store.GetRegionByFlowerbedID(ctx, flowerbedID)
@@ -113,6 +118,7 @@ func (r *FlowerbedRepository) flowerbedIDExists(ctx context.Context, id int32) e
 		if errors.Is(err, pgx.ErrNoRows) {
 			return storage.ErrFlowerbedNotFound
 		}
+		slog.Error("Error checking if flowerbed ID exists", "Error", err, "Flowerbed ID", id)
 		return err
 	}
 

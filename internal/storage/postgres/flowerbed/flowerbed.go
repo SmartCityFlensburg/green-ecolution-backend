@@ -2,6 +2,7 @@ package flowerbed
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	"github.com/green-ecolution/green-ecolution-backend/internal/storage"
@@ -133,6 +134,7 @@ func WithRegionID(id int32) entities.EntityFunc[entities.Flowerbed] {
 func (r *FlowerbedRepository) Delete(ctx context.Context, id int32) error {
 	_, err := r.store.DeleteFlowerbed(ctx, id)
 	if err != nil {
+		slog.Error("Error deleting flowerbed", "Error", err, "Flowerbed ID", id)
 		return err
 	}
 
@@ -142,11 +144,13 @@ func (r *FlowerbedRepository) Delete(ctx context.Context, id int32) error {
 func (r *FlowerbedRepository) DeleteAndUnlinkImages(ctx context.Context, id int32) error {
 	images, err := r.GetAllImagesByID(ctx, id)
 	if err != nil {
+		slog.Error("failed to retrieve images for flowerbed", "Error", err, "Flowerbed ID", id)
 		return r.store.HandleError(errors.Wrap(err, "failed to get images"))
 	}
 
 	for _, img := range images {
 		if err := r.UnlinkImage(ctx, id, img.ID); err != nil {
+			slog.Error("failed to unlink image from flowerbed", "Error", err, "Flowerbed ID", id, "Image ID", img.ID)
 			return r.store.HandleError(errors.Wrap(err, "failed to unlink images"))
 		}
 	}
@@ -162,6 +166,7 @@ func (r *FlowerbedRepository) UnlinkImage(ctx context.Context, id, imageID int32
 
 	_, err := r.store.UnlinkFlowerbedImage(ctx, &args)
 	if err != nil {
+		slog.Error("Error unlinking image from flowerbed", "Error", err, "Flowerbed ID", id, "Image ID", imageID)
 		return err
 	}
 
@@ -171,6 +176,7 @@ func (r *FlowerbedRepository) UnlinkImage(ctx context.Context, id, imageID int32
 func (r *FlowerbedRepository) UnlinkAllImages(ctx context.Context, id int32) error {
 	_, err := r.store.UnlinkAllFlowerbedImages(ctx, id)
 	if err != nil {
+		slog.Error("Error unlinking all images from flowerbed", "Error", err, "Flowerbed ID", id)
 		return err
 	}
 
@@ -179,7 +185,9 @@ func (r *FlowerbedRepository) UnlinkAllImages(ctx context.Context, id int32) err
 
 func (r *FlowerbedRepository) UnlinkSensorID(ctx context.Context, sensorID string) error {
 	if sensorID == "" {
-		return errors.New("sensorID cannot be empty")
+		err := errors.New("sensorID cannot be empty")
+		slog.Error("Error unlinking sensorID from flowerbeds", "Error", err)
+		return err
 	}
 	return r.store.UnlinkSensorIDFromFlowerbeds(ctx, &sensorID)
 }
@@ -187,6 +195,7 @@ func (r *FlowerbedRepository) UnlinkSensorID(ctx context.Context, sensorID strin
 func (r *FlowerbedRepository) Archive(ctx context.Context, id int32) error {
 	_, err := r.store.ArchiveFlowerbed(ctx, id)
 	if err != nil {
+		slog.Error("Error archiving flowerbed", "Error", err, "Flowerbed ID", id)
 		return err
 	}
 

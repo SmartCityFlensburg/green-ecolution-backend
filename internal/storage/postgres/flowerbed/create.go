@@ -2,6 +2,7 @@ package flowerbed
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	sqlc "github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/_sqlc"
@@ -36,6 +37,7 @@ func (r *FlowerbedRepository) Create(ctx context.Context, fFn ...entities.Entity
 
 	id, err := r.createEntity(ctx, entity)
 	if err != nil {
+		slog.Error("Error creating flowerbed", "Error", err)
 		return nil, r.store.HandleError(err)
 	}
 
@@ -47,6 +49,7 @@ func (r *FlowerbedRepository) Create(ctx context.Context, fFn ...entities.Entity
 func (r *FlowerbedRepository) CreateAndLinkImages(ctx context.Context, fFn ...entities.EntityFunc[entities.Flowerbed]) (*entities.Flowerbed, error) {
 	entity, err := r.Create(ctx, fFn...)
 	if err != nil {
+		slog.Error("Error creating ", "Error", err)
 		return nil, err
 	}
 
@@ -77,7 +80,8 @@ func (r *FlowerbedRepository) createEntity(ctx context.Context, entity *entities
 
 	id, err := r.store.CreateFlowerbed(ctx, &args)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error creating flowerbed", "Error", err)
+		return nil, err
 	}
 
 	return &id, nil
@@ -87,6 +91,7 @@ func (r *FlowerbedRepository) handleImages(ctx context.Context, flowerbedID int3
 	for _, img := range images {
 		err := r.linkImages(ctx, flowerbedID, img.ID)
 		if err != nil {
+			slog.Error("Error linking images to flowerbed", "Error", err)
 			return err
 		}
 	}
