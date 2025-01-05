@@ -3,6 +3,7 @@ package vehicle
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	sqlc "github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/_sqlc"
@@ -19,6 +20,7 @@ func (r *VehicleRepository) Update(ctx context.Context, id int32, updateFn func(
 
 		vh, err := r.GetByID(ctx, id)
 		if err != nil {
+			slog.Error("Error getting vehicle by ID", "Error", err, "VehicleID", id)
 			return err
 		}
 

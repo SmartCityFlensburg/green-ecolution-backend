@@ -3,6 +3,7 @@ package vehicle
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	sqlc "github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/_sqlc"
@@ -40,6 +41,7 @@ func (r *VehicleRepository) Create(ctx context.Context, createFn func(*entities.
 		entity := defaultVehicle()
 		created, err := createFn(entity)
 		if err != nil {
+			slog.Error("Error creating vehicle entity", "Error", err)
 			return err
 		}
 
@@ -86,7 +88,8 @@ func (r *VehicleRepository) createEntity(ctx context.Context, entity *entities.V
 
 	id, err := r.store.CreateVehicle(ctx, &args)
 	if err != nil {
-		return nil, r.store.HandleError(err)
+		slog.Error("Error creating vehicle entity", "Error", err)
+		return nil, err
 	}
 
 	return &id, nil

@@ -3,6 +3,7 @@ package wateringplan
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
 	sqlc "github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/_sqlc"
@@ -20,6 +21,7 @@ func (w *WateringPlanRepository) Update(ctx context.Context, id int32, updateFn 
 
 		entity, err := w.GetByID(ctx, id)
 		if err != nil {
+			slog.Error("Error at WateringPlan Update", "Error", err)
 			return w.store.HandleError(err)
 		}
 
@@ -47,7 +49,9 @@ func (w *WateringPlanRepository) Update(ctx context.Context, id int32, updateFn 
 func (w *WateringPlanRepository) updateEntity(ctx context.Context, entity *entities.WateringPlan) error {
 	date, err := utils.TimeToPgDate(entity.Date)
 	if err != nil {
-		return errors.New("failed to convert date")
+		err := errors.New("failed to convert date")
+		slog.Error("Error while converting date", "Error", err)
+		return err
 	}
 
 	totalWaterRequired, err := w.calculateRequiredWater(ctx, entity.TreeClusters)
@@ -113,7 +117,8 @@ func (w *WateringPlanRepository) updateConsumedWaterValues(ctx context.Context, 
 			TreeClusterID:  value.TreeClusterID,
 			ConsumedWater:  *value.ConsumedWater,
 		}); err != nil {
-			return w.store.HandleError(err)
+			slog.Error("Error while updating consumed water values", "Error", err)
+			return err
 		}
 	}
 

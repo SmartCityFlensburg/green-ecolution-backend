@@ -3,6 +3,7 @@ package wateringplan
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -68,6 +69,7 @@ func (w *WateringPlanRepository) Create(ctx context.Context, createFn func(*enti
 	})
 
 	if err != nil {
+		slog.Error("failed to create watering plan", "Error", err)
 		return nil, err
 	}
 
@@ -77,7 +79,9 @@ func (w *WateringPlanRepository) Create(ctx context.Context, createFn func(*enti
 func (w *WateringPlanRepository) createEntity(ctx context.Context, entity *entities.WateringPlan) (*int32, error) {
 	date, err := utils.TimeToPgDate(entity.Date)
 	if err != nil {
-		return nil, errors.New("failed to convert date")
+		err = errors.New("failed to convert date")
+		slog.Error("failed to convert date", "Error", err)
+		return nil, err
 	}
 
 	totalWaterRequired, err := w.calculateRequiredWater(ctx, entity.TreeClusters)

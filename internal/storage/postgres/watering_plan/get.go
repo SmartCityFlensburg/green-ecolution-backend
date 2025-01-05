@@ -3,6 +3,7 @@ package wateringplan
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/green-ecolution/green-ecolution-backend/internal/entities"
@@ -13,6 +14,7 @@ import (
 func (w *WateringPlanRepository) GetAll(ctx context.Context) ([]*entities.WateringPlan, error) {
 	rows, err := w.store.GetAllWateringPlans(ctx)
 	if err != nil {
+		slog.Error("Error while fetching watering plans", "Error", err)
 		return nil, w.store.HandleError(err)
 	}
 
@@ -29,7 +31,8 @@ func (w *WateringPlanRepository) GetAll(ctx context.Context) ([]*entities.Wateri
 func (w *WateringPlanRepository) GetByID(ctx context.Context, id int32) (*entities.WateringPlan, error) {
 	row, err := w.store.GetWateringPlanByID(ctx, id)
 	if err != nil {
-		return nil, w.store.HandleError(err)
+		slog.Error("Error while fetching watering plan", "Error", err, "ID", id)
+		return nil, err
 	}
 
 	wp := w.mapper.FromSql(row)
@@ -47,7 +50,8 @@ func (w *WateringPlanRepository) GetLinkedVehicleByIDAndType(ctx context.Context
 	})
 
 	if err != nil {
-		return nil, w.store.HandleError(err)
+		slog.Error("Error while fetching vehicle", "Error", err, "ID", id, "Type", vehicleType)
+		return nil, err
 	}
 
 	return w.vehicleMapper.FromSql(row), nil
@@ -56,7 +60,8 @@ func (w *WateringPlanRepository) GetLinkedVehicleByIDAndType(ctx context.Context
 func (w *WateringPlanRepository) GetLinkedTreeClustersByID(ctx context.Context, id int32) ([]*entities.TreeCluster, error) {
 	rows, err := w.store.GetTreeClustersByWateringPlanID(ctx, id)
 	if err != nil {
-		return nil, w.store.HandleError(err)
+		slog.Error("Error while fetching tree clusters", "Error", err, "ID", id)
+		return nil, err
 	}
 
 	tc := w.clusterMapper.FromSqlList(rows)
@@ -72,7 +77,8 @@ func (w *WateringPlanRepository) GetLinkedTreeClustersByID(ctx context.Context, 
 func (w *WateringPlanRepository) GetEvaluationValues(ctx context.Context, id int32) ([]*entities.EvaluationValue, error) {
 	rows, err := w.store.GetAllTreeClusterWateringPlanByID(ctx, id)
 	if err != nil {
-		return nil, w.store.HandleError(err)
+		slog.Error("Error while fetching evaluation values", "Error", err, "ID", id)
+		return nil, err
 	}
 
 	return w.mapper.EvaluationFromSqlList(rows), nil
@@ -81,7 +87,8 @@ func (w *WateringPlanRepository) GetEvaluationValues(ctx context.Context, id int
 func (w *WateringPlanRepository) GetLinkedUsersByID(ctx context.Context, id int32) ([]*uuid.UUID, error) {
 	pgUUIDS, err := w.store.GetUsersByWateringPlanID(ctx, id)
 	if err != nil {
-		return nil, w.store.HandleError(err)
+		slog.Error("Error while fetching users", "Error", err, "ID", id)
+		return nil, err
 	}
 
 	// Convert pgtype.UUID to uuid.UUID
