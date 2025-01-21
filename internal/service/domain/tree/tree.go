@@ -12,7 +12,6 @@ import (
 	"github.com/green-ecolution/green-ecolution-backend/internal/service"
 	"github.com/green-ecolution/green-ecolution-backend/internal/service/domain/utils"
 	"github.com/green-ecolution/green-ecolution-backend/internal/storage"
-	"github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/tree"
 	"github.com/green-ecolution/green-ecolution-backend/internal/worker"
 )
 
@@ -56,7 +55,11 @@ func (s *TreeService) HandleNewSensorData(ctx context.Context, event *entities.E
 		return nil
 	}
 
-	newTree, err := s.treeRepo.Update(ctx, t.ID, tree.WithWateringStatus(status))
+	newTree, err := s.treeRepo.Update(ctx, t.ID, func(tree *entities.Tree) (bool, error) {
+		tree.WateringStatus = status
+		return true, nil
+	})
+
 	if err != nil {
 		slog.Error("failed to update tree with new watering status", "tree_id", t.ID, "watering_status", status, "err", err)
 	}
@@ -121,32 +124,43 @@ func (s *TreeService) Create(ctx context.Context, treeCreate *entities.TreeCreat
 		return nil, service.NewError(service.BadRequest, errors.Wrap(err, "validation error").Error())
 	}
 
-	fn := make([]entities.EntityFunc[entities.Tree], 0)
+	var treeClusterID *entities.TreeCluster
 	if treeCreate.TreeClusterID != nil {
-		treeClusterID, err := s.treeClusterRepo.GetByID(ctx, *treeCreate.TreeClusterID)
+		var err error
+		treeClusterID, err = s.treeClusterRepo.GetByID(ctx, *treeCreate.TreeClusterID)
 		if err != nil {
 			return nil, handleError(err)
 		}
-		fn = append(fn, tree.WithTreeCluster(treeClusterID))
 	}
 
+	var sensorID *entities.Sensor
 	if treeCreate.SensorID != nil {
-		sensorID, err := s.sensorRepo.GetByID(ctx, *treeCreate.SensorID)
+		var err error
+		sensorID, err = s.sensorRepo.GetByID(ctx, *treeCreate.SensorID)
 		if err != nil {
 			return nil, handleError(err)
 		}
-		fn = append(fn, tree.WithSensor(sensorID))
 	}
 
-	fn = append(fn,
-		tree.WithReadonly(treeCreate.Readonly),
-		tree.WithPlantingYear(treeCreate.PlantingYear),
-		tree.WithSpecies(treeCreate.Species),
-		tree.WithNumber(treeCreate.Number),
-		tree.WithLatitude(treeCreate.Latitude),
-		tree.WithLongitude(treeCreate.Longitude),
-	)
-	newTree, err := s.treeRepo.Create(ctx, fn...)
+	newTree, err := s.treeRepo.Create(ctx, func(tree *entities.Tree) (bool, error) {
+		tree.Readonly = treeCreate.Readonly
+		tree.PlantingYear = treeCreate.PlantingYear
+		tree.Species = treeCreate.Species
+		tree.Number = treeCreate.Number
+		tree.Latitude = treeCreate.Latitude
+		tree.Longitude = treeCreate.Longitude
+
+		// Apply TreeCluster and Sensor if available
+		if treeClusterID != nil {
+			tree.TreeCluster = treeClusterID
+		}
+		if sensorID != nil {
+			tree.Sensor = sensorID
+		}
+
+		return true, nil
+	})
+
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -178,42 +192,34 @@ func (s *TreeService) Update(ctx context.Context, id int32, tu *entities.TreeUpd
 		return nil, handleError(err)
 	}
 
-	// Check if the tree is readonly (imported from csv)
-	// if currentTree.Readonly {
-	// 	return nil, handleError(fmt.Errorf("tree with ID %d is readonly and cannot be updated", id))
-	// }
-
-	fn := make([]entities.EntityFunc[entities.Tree], 0)
+	var treeCluster *entities.TreeCluster
 	if tu.TreeClusterID != nil {
-		var treeCluster *entities.TreeCluster
 		treeCluster, err = s.treeClusterRepo.GetByID(ctx, *tu.TreeClusterID)
 		if err != nil {
 			return nil, handleError(fmt.Errorf("failed to find TreeCluster with ID %d: %w", *tu.TreeClusterID, err))
 		}
-		fn = append(fn, tree.WithTreeCluster(treeCluster))
-	} else {
-		fn = append(fn, tree.WithTreeCluster(nil))
 	}
 
+	var sensor *entities.Sensor
 	if tu.SensorID != nil {
-		var sensor *entities.Sensor
 		sensor, err = s.sensorRepo.GetByID(ctx, *tu.SensorID)
 		if err != nil {
 			return nil, handleError(fmt.Errorf("failed to find Sensor with ID %v: %w", *tu.SensorID, err))
 		}
-		fn = append(fn, tree.WithSensor(sensor))
-	} else {
-		fn = append(fn, tree.WithSensor(nil))
 	}
 
-	fn = append(fn, tree.WithPlantingYear(tu.PlantingYear),
-		tree.WithSpecies(tu.Species),
-		tree.WithNumber(tu.Number),
-		tree.WithLatitude(tu.Latitude),
-		tree.WithLongitude(tu.Longitude),
-		tree.WithDescription(tu.Description))
+	updatedTree, err := s.treeRepo.Update(ctx, id, func(tree *entities.Tree) (bool, error) {
+		tree.PlantingYear = tu.PlantingYear
+		tree.Species = tu.Species
+		tree.Number = tu.Number
+		tree.Latitude = tu.Latitude
+		tree.Longitude = tu.Longitude
+		tree.Description = tu.Description
+		tree.TreeCluster = treeCluster
+		tree.Sensor = sensor
+		return true, nil
+	})
 
-	updatedTree, err := s.treeRepo.Update(ctx, id, fn...)
 	if err != nil {
 		return nil, handleError(err)
 	}

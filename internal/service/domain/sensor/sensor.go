@@ -12,7 +12,6 @@ import (
 	"github.com/green-ecolution/green-ecolution-backend/internal/service"
 	"github.com/green-ecolution/green-ecolution-backend/internal/storage"
 	"github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/sensor"
-	"github.com/green-ecolution/green-ecolution-backend/internal/storage/postgres/tree"
 	"github.com/green-ecolution/green-ecolution-backend/internal/worker"
 )
 
@@ -144,7 +143,10 @@ func (s *SensorService) MapSensorToTree(ctx context.Context, sen *entities.Senso
 	}
 
 	if nearestTree != nil {
-		_, err = s.treeRepo.Update(ctx, nearestTree.ID, tree.WithSensor(sen))
+		_, err = s.treeRepo.Update(ctx, nearestTree.ID, func(tree *entities.Tree) (bool, error) {
+			tree.Sensor = sen
+			return true, nil
+		})
 		if err != nil {
 			return handleError(err)
 		}
