@@ -18,7 +18,9 @@ func TestTreeRepository_Create(t *testing.T) {
 		r := NewTreeRepository(suite.Store, mappers)
 
 		// when
-		got, err := r.Create(context.Background())
+		got, err := r.Create(context.Background(), func(tree *entities.Tree) (bool, error) {
+			return true, nil
+		})
 
 		// then
 		assert.NoError(t, err)
@@ -56,17 +58,19 @@ func TestTreeRepository_Create(t *testing.T) {
 		sensor := mappers.sMapper.FromSql(sqlSensor)
 
 		// when
-		got, err := r.Create(context.Background(),
-			WithSpecies("Oak"),
-			WithNumber("T001"),
-			WithPlantingYear(2023),
-			WithLatitude(54.801539),
-			WithLongitude(9.446741),
-			WithDescription("A newly planted oak tree"),
-			WithWateringStatus(entities.WateringStatusGood),
-			WithTreeCluster(treeCluster),
-			WithSensor(sensor),
-		)
+		got, err := r.Create(context.Background(), func(tree *entities.Tree) (bool, error) {
+			tree.Species = "Oak"
+			tree.Number = "T001"
+			tree.PlantingYear = 2023
+			tree.Latitude = 54.801539
+			tree.Longitude = 9.446741
+			tree.Description = "A newly planted oak tree"
+			tree.WateringStatus = entities.WateringStatusGood
+			tree.TreeCluster = treeCluster
+			tree.Sensor = sensor
+			return true, nil
+		})
+
 		treeClusterByTree, errClusterByTree := r.getTreeClusterByTreeID(context.Background(), got.ID)
 		sensorByTree, errSensorByTree := r.GetSensorByTreeID(context.Background(), got.ID)
 
@@ -100,10 +104,11 @@ func TestTreeRepository_Create(t *testing.T) {
 		r := NewTreeRepository(suite.Store, mappers)
 
 		// when
-		got, err := r.Create(context.Background(),
-			WithLatitude(-200),
-			WithLongitude(0),
-		)
+		got, err := r.Create(context.Background(), func(tree *entities.Tree) (bool, error) {
+			tree.Latitude = -200
+			tree.Longitude = 0
+			return true, nil
+		})
 
 		// then
 		assert.Error(t, err)
@@ -118,10 +123,11 @@ func TestTreeRepository_Create(t *testing.T) {
 		r := NewTreeRepository(suite.Store, mappers)
 
 		// when
-		got, err := r.Create(context.Background(),
-			WithLatitude(0),
-			WithLongitude(200),
-		)
+		got, err := r.Create(context.Background(), func(tree *entities.Tree) (bool, error) {
+			tree.Latitude = 0
+			tree.Longitude = 200
+			return true, nil
+		})
 
 		// then
 		assert.Error(t, err)
@@ -139,7 +145,10 @@ func TestTreeRepository_Create(t *testing.T) {
 		cancel()
 
 		// when
-		got, err := r.Create(ctx, WithSpecies("Oak"))
+		got, err := r.Create(ctx, func(tree *entities.Tree) (bool, error) {
+			tree.Species = "Oak"
+			return true, nil
+		})
 
 		// then
 		assert.Error(t, err)
@@ -172,17 +181,19 @@ func TestTreeRepository_CreateAndLinkImages(t *testing.T) {
 		sensor := mappers.sMapper.FromSql(sqlSensor)
 
 		// when
-		tree, createErr := r.CreateAndLinkImages(context.Background(),
-			WithSpecies("Oak"),
-			WithNumber("T001"),
-			WithLatitude(54.801539),
-			WithLongitude(9.446741),
-			WithPlantingYear(2023),
-			WithDescription("Test tree with images"),
-			WithTreeCluster(treeCluster),
-			WithSensor(sensor),
-			WithImages(images),
-		)
+		tree, createErr := r.CreateAndLinkImages(context.Background(), func(tree *entities.Tree) (bool, error) {
+			tree.Species = "Oak"
+			tree.Number = "T001"
+			tree.Latitude = 54.801539
+			tree.Longitude = 9.446741
+			tree.PlantingYear = 2023
+			tree.Description = "Test tree with images"
+			tree.TreeCluster = treeCluster
+			tree.Sensor = sensor
+			tree.Images = images
+			return true, nil
+		})
+
 		treeClusterByTree, errClusterByTree := r.getTreeClusterByTreeID(context.Background(), tree.ID)
 		sensorByTree, errSensorByTree := r.GetSensorByTreeID(context.Background(), tree.ID)
 
@@ -218,15 +229,16 @@ func TestTreeRepository_CreateAndLinkImages(t *testing.T) {
 		r := NewTreeRepository(suite.Store, mappers)
 
 		// when
-		tree, createErr := r.CreateAndLinkImages(context.Background(),
-			WithSpecies("Oak"),
-			WithNumber("T001"),
-			WithLatitude(54.801539),
-			WithLongitude(9.446741),
-			WithPlantingYear(2023),
-			WithReadonly(true),
-			WithDescription("Test tree with images"),
-		)
+		tree, createErr := r.CreateAndLinkImages(context.Background(), func(tree *entities.Tree) (bool, error) {
+			tree.Species = "Oak"
+			tree.Number = "T001"
+			tree.Latitude = 54.801539
+			tree.Longitude = 9.446741
+			tree.PlantingYear = 2023
+			tree.Readonly = true
+			tree.Description = "Test tree with images"
+			return true, nil
+		})
 
 		// then
 		assert.NoError(t, createErr)
@@ -256,7 +268,11 @@ func TestTreeRepository_CreateAndLinkImages(t *testing.T) {
 		images := mappers.iMapper.FromSqlList(sqlImages)
 
 		// when
-		got, err := r.CreateAndLinkImages(ctx, WithSpecies("Oak"), WithImages(images))
+		got, err := r.CreateAndLinkImages(ctx, func(tree *entities.Tree) (bool, error) {
+			tree.Species = "Oak"
+			tree.Images = images
+			return true, nil
+		})
 
 		// then
 		assert.Error(t, err)
