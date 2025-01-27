@@ -21,7 +21,6 @@ type SensorService struct {
 	treeRepo      storage.TreeRepository
 	flowerbedRepo storage.FlowerbedRepository
 	validator     *validator.Validate
-	StatusUpdater *StatusUpdater
 	eventManager  *worker.EventManager
 }
 
@@ -36,7 +35,6 @@ func NewSensorService(
 		treeRepo:      treeRepo,
 		flowerbedRepo: flowerbedRepo,
 		validator:     validator.New(),
-		StatusUpdater: &StatusUpdater{sensorRepo: sensorRepo},
 		eventManager:  eventManager,
 	}
 }
@@ -145,8 +143,25 @@ func (s *SensorService) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *SensorService) RunStatusUpdater(ctx context.Context, interval time.Duration) {
-	s.StatusUpdater.RunStatusUpdater(ctx, interval)
+func (s *SensorService) UpdateStatuses(ctx context.Context) error {
+	sensors, err := s.sensorRepo.GetAll(ctx)
+	if err != nil {
+		return err
+	}
+
+	cutoffTime := time.Now().Add(-72 * time.Hour) // 3 days ago
+	for _, sens := range sensors {
+		if sens.UpdatedAt.Before(cutoffTime) {
+			_, err = s.sensorRepo.Update(ctx, sens.ID, sensor.WithStatus(entities.SensorStatusOffline))
+			if err != nil {
+				slog.Error("Failed to update sensor %s to offline: %v", sens.ID, err.Error())
+			} else {
+				slog.Info("Sensor marked as offline due to inactivity", "id", sens.ID)
+			}
+		}
+	}
+
+	return nil
 }
 
 // TODO: Not called by any function
