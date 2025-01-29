@@ -28,6 +28,7 @@ func TestGetAllTreeCluster(t *testing.T) {
 
 		mockClusterService.EXPECT().GetAll(
 			mock.Anything,
+			"",
 		).Return(TestClusterList, nil)
 
 		// when
@@ -56,6 +57,7 @@ func TestGetAllTreeCluster(t *testing.T) {
 
 		mockClusterService.EXPECT().GetAll(
 			mock.Anything,
+			"",
 		).Return([]*entities.TreeCluster{}, nil)
 
 		// when
@@ -83,6 +85,7 @@ func TestGetAllTreeCluster(t *testing.T) {
 
 		mockClusterService.EXPECT().GetAll(
 			mock.Anything,
+			"",
 		).Return(nil, fiber.NewError(fiber.StatusInternalServerError, "service error"))
 
 		// when

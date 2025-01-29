@@ -23,6 +23,7 @@ func TestRegisterRoutes(t *testing.T) {
 
 			mockClusterService.EXPECT().GetAll(
 				mock.Anything,
+				"",
 			).Return(TestClusterList, nil)
 
 			// when

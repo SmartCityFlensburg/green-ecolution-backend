@@ -30,7 +30,7 @@ func TestTreeClusterService_GetAll(t *testing.T) {
 		clusterRepo.EXPECT().GetAll(ctx).Return(expectedClusters, nil)
 
 		// when
-		clusters, err := svc.GetAll(ctx)
+		clusters, err := svc.GetAll(ctx, "")
 
 		// then
 		assert.NoError(t, err)
@@ -46,7 +46,7 @@ func TestTreeClusterService_GetAll(t *testing.T) {
 		clusterRepo.EXPECT().GetAll(ctx).Return([]*entities.TreeCluster{}, nil)
 
 		// when
-		clusters, err := svc.GetAll(ctx)
+		clusters, err := svc.GetAll(ctx, "")
 
 		// then
 		assert.NoError(t, err)
@@ -64,7 +64,7 @@ func TestTreeClusterService_GetAll(t *testing.T) {
 		clusterRepo.EXPECT().GetAll(ctx).Return(nil, expectedErr)
 
 		// when
-		clusters, err := svc.GetAll(ctx)
+		clusters, err := svc.GetAll(ctx, "")
 
 		// then
 		assert.Error(t, err)
