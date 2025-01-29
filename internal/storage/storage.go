@@ -88,6 +88,7 @@ type ImageRepository interface {
 type VehicleRepository interface {
 	// GetAll returns all vehicles
 	GetAll(ctx context.Context) ([]*entities.Vehicle, error)
+	GetAllByProvider(ctx context.Context, provider string) ([]*entities.Vehicle, error)
 	// GetAllByType returns all vehicles by vehicle type
 	GetAllByType(ctx context.Context, vehicleType entities.VehicleType) ([]*entities.Vehicle, error)
 	// GetByID returns one vehicle by id
@@ -105,6 +106,7 @@ type VehicleRepository interface {
 type WateringPlanRepository interface {
 	// GetAll returns all watering plans
 	GetAll(ctx context.Context) ([]*entities.WateringPlan, error)
+	GetAllByProvider(ctx context.Context, provider string) ([]*entities.WateringPlan, error)
 	// GetByID returns one watering plan by id
 	GetByID(ctx context.Context, id int32) (*entities.WateringPlan, error)
 	// GetLinkedVehicleByIDAndType returnes all vehicles linked to a watering plan by the watering plan id and the vehicle type
@@ -138,6 +140,7 @@ type TreeClusterRepository interface {
 	// Delete deletes a tree cluster by id
 	Delete(ctx context.Context, id int32) error
 
+	GetAllByProvider(ctx context.Context, provider string) ([]*entities.TreeCluster, error)
 	Archive(ctx context.Context, id int32) error
 	LinkTreesToCluster(ctx context.Context, treeClusterID int32, treeIDs []int32) error
 	GetCenterPoint(ctx context.Context, id int32) (float64, float64, error)
@@ -146,6 +149,7 @@ type TreeClusterRepository interface {
 
 type TreeRepository interface {
 	BasicCrudRepository[entities.Tree]
+	GetAllByProvider(ctx context.Context, provider string) ([]*entities.Tree, error)
 	GetByTreeClusterID(ctx context.Context, id int32) ([]*entities.Tree, error)
 	GetAllImagesByID(ctx context.Context, id int32) ([]*entities.Image, error)
 	GetSensorByTreeID(ctx context.Context, id int32) (*entities.Sensor, error)
@@ -166,6 +170,7 @@ type TreeRepository interface {
 
 type SensorRepository interface {
 	GetAll(ctx context.Context) ([]*entities.Sensor, error)
+	GetAllByProvider(ctx context.Context, provider string) ([]*entities.Sensor, error)
 	GetByID(ctx context.Context, id string) (*entities.Sensor, error)
 	Create(ctx context.Context, createFn func(*entities.Sensor) (bool, error)) (*entities.Sensor, error)
 	Update(ctx context.Context, id string, updateFn func(*entities.Sensor) (bool, error)) (*entities.Sensor, error)
@@ -190,6 +195,7 @@ type S3Repository interface {
 
 type FlowerbedRepository interface {
 	BasicCrudRepository[entities.Flowerbed]
+	// GetAllByProvider(ctx context.Context, provider string) ([]*entities.Sensor, error)
 	GetSensorByFlowerbedID(ctx context.Context, id int32) (*entities.Sensor, error)
 	GetAllImagesByID(ctx context.Context, id int32) ([]*entities.Image, error)
 	GetRegionByFlowerbedID(ctx context.Context, id int32) (*entities.Region, error)
