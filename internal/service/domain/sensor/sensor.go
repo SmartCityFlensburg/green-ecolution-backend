@@ -49,15 +49,15 @@ func (s *SensorService) publishNewSensorDataEvent(ctx context.Context, data *ent
 	}
 }
 
-func (s *SensorService) GetAll(ctx context.Context) ([]*entities.Sensor, error) {
+func (s *SensorService) GetAll(ctx context.Context) ([]*entities.Sensor, int64, error) {
 	log := logger.GetLogger(ctx)
-	sensors, err := s.sensorRepo.GetAll(ctx)
+	sensors, totalCount, err := s.sensorRepo.GetAll(ctx)
 	if err != nil {
 		log.Debug("failed to fetch sensors", "error", err)
-		return nil, service.MapError(ctx, err, service.ErrorLogEntityNotFound)
+		return nil, 0, service.MapError(ctx, err, service.ErrorLogEntityNotFound)
 	}
 
-	return sensors, nil
+	return sensors, totalCount, nil
 }
 
 func (s *SensorService) GetByID(ctx context.Context, id string) (*entities.Sensor, error) {
