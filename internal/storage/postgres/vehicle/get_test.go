@@ -71,7 +71,6 @@ func TestVehicleRepository_GetAll(t *testing.T) {
 		}
 	})
 
-
 	t.Run("should return error on invalid page value", func(t *testing.T) {
 		// given
 		suite.ResetDB(t)
