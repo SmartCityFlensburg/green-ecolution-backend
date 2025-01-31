@@ -13,6 +13,7 @@ import (
 	"github.com/green-ecolution/green-ecolution-backend/internal/server/http/handler/v1/errorhandler"
 	"github.com/green-ecolution/green-ecolution-backend/internal/service"
 	"github.com/green-ecolution/green-ecolution-backend/internal/utils"
+	"github.com/green-ecolution/green-ecolution-backend/internal/utils/pagination"
 )
 
 var (
@@ -33,12 +34,12 @@ var (
 // @Router			/v1/watering-plan [get]
 // @Param			page	query	string	false	"Page"
 // @Param			limit	query	string	false	"Limit"
-// @Param			status	query	string	false	"Status"
 // @Security		Keycloak
 func GetAllWateringPlans(svc service.WateringPlanService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx := c.Context()
-		domainData, err := svc.GetAll(ctx)
+
+		domainData, totalCount, err := svc.GetAll(ctx)
 		if err != nil {
 			return errorhandler.HandleError(err)
 		}
@@ -50,7 +51,7 @@ func GetAllWateringPlans(svc service.WateringPlanService) fiber.Handler {
 
 		return c.JSON(entities.WateringPlanListResponse{
 			Data:       data,
-			Pagination: &entities.Pagination{}, // TODO: Handle pagination
+			Pagination: pagination.Create(ctx, totalCount),
 		})
 	}
 }
