@@ -106,7 +106,7 @@ type VehicleRepository interface {
 
 type WateringPlanRepository interface {
 	// GetAll returns all watering plans
-	GetAll(ctx context.Context) ([]*entities.WateringPlan, error)
+	GetAll(ctx context.Context) ([]*entities.WateringPlan, int64, error)
 	// GetByID returns one watering plan by id
 	GetByID(ctx context.Context, id int32) (*entities.WateringPlan, error)
 	// GetLinkedVehicleByIDAndType returnes all vehicles linked to a watering plan by the watering plan id and the vehicle type
