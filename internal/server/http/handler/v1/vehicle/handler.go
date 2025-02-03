@@ -10,6 +10,7 @@ import (
 	"github.com/green-ecolution/green-ecolution-backend/internal/server/http/entities/mapper/generated"
 	"github.com/green-ecolution/green-ecolution-backend/internal/server/http/handler/v1/errorhandler"
 	"github.com/green-ecolution/green-ecolution-backend/internal/service"
+	"github.com/green-ecolution/green-ecolution-backend/internal/utils/pagination"
 )
 
 var (
@@ -30,13 +31,14 @@ var (
 // @Router			/v1/vehicle [get]
 // @Param			page	query	string	false	"Page"
 // @Param			limit	query	string	false	"Limit"
-// @Param			status	query	string	false	"Status"
 // @Param			type	query	string	false	"Vehicle Type"
 // @Security		Keycloak
 func GetAllVehicles(svc service.VehicleService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx := c.Context()
+
 		var domainData []*domain.Vehicle
+		var totalCount int64
 		var err error
 
 		vehicleTypeStr := c.Query("type")
@@ -45,9 +47,9 @@ func GetAllVehicles(svc service.VehicleService) fiber.Handler {
 			if vehicleType == domain.VehicleTypeUnknown {
 				return errorhandler.HandleError(service.NewError(service.BadRequest, "invalid vehicle type"))
 			}
-			domainData, err = svc.GetAllByType(ctx, vehicleType)
+			domainData, totalCount, err = svc.GetAllByType(ctx, vehicleType)
 		} else {
-			domainData, err = svc.GetAll(ctx)
+			domainData, totalCount, err = svc.GetAll(ctx)
 		}
 
 		if err != nil {
@@ -56,12 +58,12 @@ func GetAllVehicles(svc service.VehicleService) fiber.Handler {
 
 		data := make([]*entities.VehicleResponse, len(domainData))
 		for i, domain := range domainData {
-			data[i] = mapVehicleToDto(domain)
+			data[i] = vehicleMapper.FromResponse(domain)
 		}
 
 		return c.JSON(entities.VehicleListResponse{
 			Data:       data,
-			Pagination: &entities.Pagination{}, // TODO: Handle pagination
+			Pagination: pagination.Create(ctx, totalCount),
 		})
 	}
 }
@@ -95,8 +97,7 @@ func GetVehicleByID(svc service.VehicleService) fiber.Handler {
 			return errorhandler.HandleError(err)
 		}
 
-		data := mapVehicleToDto(domainData)
-		return c.JSON(data)
+		return c.JSON(vehicleMapper.FromResponse(domainData))
 	}
 }
 
@@ -129,8 +130,7 @@ func GetVehicleByPlate(svc service.VehicleService) fiber.Handler {
 			return errorhandler.HandleError(err)
 		}
 
-		data := mapVehicleToDto(domainData)
-		return c.JSON(data)
+		return c.JSON(vehicleMapper.FromResponse(domainData))
 	}
 }
 
@@ -163,7 +163,7 @@ func CreateVehicle(svc service.VehicleService) fiber.Handler {
 			return errorhandler.HandleError(err)
 		}
 
-		data := mapVehicleToDto(domainData)
+		data := vehicleMapper.FromResponse(domainData)
 		return c.Status(fiber.StatusCreated).JSON(data)
 	}
 }
@@ -203,8 +203,7 @@ func UpdateVehicle(svc service.VehicleService) fiber.Handler {
 			return errorhandler.HandleError(err)
 		}
 
-		data := mapVehicleToDto(domainData)
-		return c.JSON(data)
+		return c.JSON(vehicleMapper.FromResponse(domainData))
 	}
 }
 
@@ -238,10 +237,4 @@ func DeleteVehicle(svc service.VehicleService) fiber.Handler {
 
 		return c.SendStatus(fiber.StatusNoContent)
 	}
-}
-
-func mapVehicleToDto(v *domain.Vehicle) *entities.VehicleResponse {
-	dto := vehicleMapper.FromResponse(v)
-
-	return dto
 }
